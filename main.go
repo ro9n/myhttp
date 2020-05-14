@@ -22,7 +22,8 @@ func main() {
 	}
 
 	for _, j := range payload {
-		jobs <- *newJob(j)
+		job, _ := newJob(j)
+		jobs <- *job
 	}
 
 	close(jobs)

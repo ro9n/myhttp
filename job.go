@@ -10,11 +10,15 @@ type job struct {
 	url string
 }
 
-func newJob(url string) *job {
+func newJob(url string) (*job, error) {
+	if len(url) < 1 {
+		return nil, fmt.Errorf("invalid argument: url, got %v", url)
+	}
+
 	j := new(job)
 	j.url = compose(url)
 
-	return j
+	return j, nil
 }
 
 func (j *job) exec(client *http.Client) (string, error) {
@@ -22,7 +26,7 @@ func (j *job) exec(client *http.Client) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
+	defer resp.Body.Close()
 	text, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
