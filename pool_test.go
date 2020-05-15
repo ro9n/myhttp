@@ -24,7 +24,6 @@ func TestHandle(t *testing.T) {
 	defer close(jobs)
 
 	result := <-results
-
 	if !strings.HasSuffix(result, "no such host") {
 		t.Error("handle failed, expected no such host as suffix")
 	}

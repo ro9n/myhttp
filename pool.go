@@ -12,7 +12,14 @@ type pool struct {
 
 func newPool() *pool {
 	p := new(pool)
-	p.client = &http.Client{Timeout: 5 * time.Second}
+	p.client = &http.Client{
+		Transport: &http.Transport{
+			TLSHandshakeTimeout:   time.Second * 10,
+			ExpectContinueTimeout: time.Second * 1,
+			ResponseHeaderTimeout: time.Second * 10,
+			IdleConnTimeout:       time.Second * 5,
+		},
+	}
 
 	return p
 }

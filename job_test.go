@@ -36,7 +36,7 @@ func TestExec(t *testing.T) {
 	client := &http.Client{Timeout: 5 * time.Second}
 
 	slow := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		time.Sleep(5 * time.Second)
+		time.Sleep(6 * time.Second)
 		_, _ = rw.Write([]byte(`OK`))
 	}))
 
