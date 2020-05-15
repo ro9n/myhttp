@@ -29,4 +29,4 @@ go test -v
 - `pool.go` Represents a worker pool, abstraction for handling jobs concurrently.
 - `job.go`  Abstraction for issuing a command to the worker pool, encapsulates execution logic.
 - `hash.go` Responsible for generating md5 digest of a text.
-- `url.go` Helper tool for appending protocol info to url.  
+- `url.go` Helper for appending protocol information to url.  
