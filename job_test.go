@@ -3,45 +3,73 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
 
 func TestNewJob(t *testing.T) {
 	const (
-		http  = "http://adjust.com/"
-		https = "https://adjust.com/"
-		empty = "adjust.com/"
+		HTTP  = "http://adjust.com/"
+		HTTPS = "https://adjust.com/"
+		EMPTY = "adjust.com/"
 	)
 
 	if _, err := newJob(""); err == nil {
 		t.Error("newJob(\"\") failed, got nil")
 	}
 
-	if job, _ := newJob(empty); job.url != http {
-		t.Errorf("newJob(\"%s\") failed, expected %v, got %v", empty, http, job.url)
+	if job, _ := newJob(EMPTY); job.url != HTTP {
+		t.Errorf("newJob(\"%s\") failed, expected %v, got %v", EMPTY, HTTP, job.url)
 	}
 
-	if job, _ := newJob(http); job.url != http {
-		t.Errorf("newJob(\"%s\") failed, expected %v, got %v", http, http, job.url)
+	if job, _ := newJob(HTTP); job.url != HTTP {
+		t.Errorf("newJob(\"%s\") failed, expected %v, got %v", HTTP, HTTP, job.url)
 	}
 
-	if job, _ := newJob(https); job.url != https {
-		t.Errorf("newJob(\"%s\") failed, expected %v, got %v", https, https, job.url)
+	if job, _ := newJob(HTTPS); job.url != HTTPS {
+		t.Errorf("newJob(\"%s\") failed, expected %v, got %v", HTTPS, HTTPS, job.url)
 	}
 }
 
 func TestExec(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		time.Sleep(10 * time.Second)
-		rw.Write([]byte(`OK`))
+	client := &http.Client{Timeout: 5 * time.Second}
+
+	slow := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		time.Sleep(5 * time.Second)
+		_, _ = rw.Write([]byte(`OK`))
 	}))
 
-	defer server.Close()
+	defer slow.Close()
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	j, _ := newJob(server.URL)
+	j, _ := newJob(slow.URL)
 	if _, err := j.exec(client); err == nil {
-		t.Error("exec(\"\") failed, got nil")
+		t.Errorf("exec(\"%s\") failed, got nil", slow.URL)
 	}
+
+	fast := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		_, _ = rw.Write([]byte(`OK`))
+	}))
+
+	defer fast.Close()
+
+	j, _ = newJob(fast.URL)
+
+	result, _ := j.exec(client)
+
+	if len(result) == 0 {
+		t.Errorf("exec(\"%s\") failed, expected non empty string, got empty", fast.URL)
+	}
+
+	words := strings.Split(result, " ")
+
+	if len(words) != 2 {
+		t.Errorf("exec(\"%s\") failed, expected  2 words, got %v", fast.URL, words)
+	}
+
+	expected := "e0aa021e21dddbd6d8cecec71e9cf564"
+	if words[1] != expected {
+		t.Errorf("exec(\"%s\") failed, expected  %v, got %v", fast.URL, expected, result)
+	}
+
 }

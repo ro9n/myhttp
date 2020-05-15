@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -13,6 +14,10 @@ func main() {
 	flag.Parse()
 	payload := flag.Args()
 
+	if *concurrency <= 0 {
+		log.Fatal("invalid argument: concurrency")
+	}
+
 	pool := newPool()
 	jobs := make(chan job, len(payload))
 	results := make(chan string, len(payload))
@@ -21,12 +26,14 @@ func main() {
 		go pool.handle(jobs, results)
 	}
 
+	defer close(jobs)
+
 	for _, j := range payload {
 		job, _ := newJob(j)
 		jobs <- *job
 	}
 
-	close(jobs)
+	defer close(jobs)
 
 	for range payload {
 		fmt.Println(<-results)
